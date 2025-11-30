@@ -14,6 +14,7 @@ import ResumeUpload from './pages/User/ResumeUpload';
 import CareerRecommendations from './pages/User/CareerRecommendations';
 import Jobs from './pages/User/Jobs';
 import JobBoard from './pages/User/JobBoard';
+import JobMatching from './pages/User/JobMatching';
 import JobDetail from './pages/User/JobDetail';
 import Roadmap from './pages/User/Roadmap';
 import Analysis from './pages/User/Analysis';
@@ -102,6 +103,14 @@ function App() {
               element={
                 <ProtectedRoute userType="user">
                   <JobBoard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/job-matching" 
+              element={
+                <ProtectedRoute userType="user">
+                  <JobMatching />
                 </ProtectedRoute>
               } 
             />

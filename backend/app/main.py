@@ -184,14 +184,33 @@ def get_recruiter_jobs(current_recruiter: models.Recruiter = Depends(auth.get_cu
     return jobs
 
 
-@app.put("/api/recruiter/jobs/{job_id}", response_model=schemas.JobResponse)
-def update_job(job_id: int, job: schemas.JobUpdate, current_recruiter: models.Recruiter = Depends(auth.get_current_recruiter), db: Session = Depends(get_db)):
+@app.put("/api/recruiter/jobs/{job_id}", response_model=schemas.JobResponseEnhanced)
+def update_job(job_id: int, job: schemas.JobUpdateEnhanced, current_recruiter: models.Recruiter = Depends(auth.get_current_recruiter), db: Session = Depends(get_db)):
     db_job = db.query(models.Job).filter(models.Job.id == job_id, models.Job.recruiter_id == current_recruiter.id).first()
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    for key, value in job.dict(exclude_unset=True).items():
+    # Update fields from the enhanced schema
+    update_data = job.dict(exclude_unset=True)
+    
+    for key, value in update_data.items():
+        # Handle enum values - convert to string if needed
+        if hasattr(value, 'value'):
+            value = value.value
         setattr(db_job, key, value)
+    
+    # Update legacy fields for backward compatibility
+    if 'job_title' in update_data:
+        db_job.title = update_data['job_title']
+    if 'jd_text' in update_data:
+        db_job.description = update_data['jd_text'][:500] if len(update_data['jd_text']) > 500 else update_data['jd_text']
+    if 'location_city' in update_data or 'location_country' in update_data:
+        location_parts = []
+        if db_job.location_city:
+            location_parts.append(db_job.location_city)
+        if db_job.location_country:
+            location_parts.append(db_job.location_country)
+        db_job.location = ', '.join(location_parts) if location_parts else None
     
     db.commit()
     db.refresh(db_job)
@@ -557,22 +576,85 @@ def recommend_careers(current_user: models.User = Depends(auth.get_current_user)
 
 @app.post("/api/ai/match-jobs")
 def match_jobs(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    """Match jobs from database using user profile and resume"""
     profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == current_user.id).first()
-    if not profile or not profile.resume_path:
-        raise HTTPException(status_code=404, detail="Resume not found. Please upload a resume first.")
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found. Please complete your profile first.")
     
-    resume_text = gemini_service.extract_text_from_file(profile.resume_path)
-    if not resume_text or len(resume_text.strip()) < 10:
-        raise HTTPException(status_code=400, detail="Could not extract text from resume. Please ensure the file is valid.")
+    # Get all active jobs from database
+    jobs_from_db = db.query(models.Job).filter(
+        models.Job.status.in_(["active", "open"])
+    ).all()
     
-    combined_text = f"Degree: {profile.degree} CGPA: {profile.cgpa_10th}, {profile.cgpa_12th} Skills: {', '.join(profile.skills or [])} Resume: {resume_text}"
+    if not jobs_from_db:
+        return {"jobs": [], "message": "No jobs available in the database"}
     
-    matched_jobs = ml_service.match_jobs_doc2vec(combined_text)
+    # Build user profile text
+    user_profile_parts = []
+    
+    if profile.degree:
+        user_profile_parts.append(f"Degree: {profile.degree}")
+    if profile.cgpa_10th:
+        user_profile_parts.append(f"10th CGPA: {profile.cgpa_10th}")
+    if profile.cgpa_12th:
+        user_profile_parts.append(f"12th CGPA: {profile.cgpa_12th}")
+    
+    # Add skills
+    all_skills = []
+    if profile.skills:
+        all_skills.extend(profile.skills if isinstance(profile.skills, list) else [profile.skills])
+    if profile.extracted_skills:
+        all_skills.extend(profile.extracted_skills if isinstance(profile.extracted_skills, list) else [profile.extracted_skills])
+    
+    if all_skills:
+        user_profile_parts.append(f"Skills: {', '.join(all_skills)}")
+    
+    # Add certifications
+    if profile.certifications:
+        certs = profile.certifications if isinstance(profile.certifications, list) else [profile.certifications]
+        user_profile_parts.append(f"Certifications: {', '.join(certs)}")
+    
+    # Add achievements
+    if profile.achievements:
+        achievements = profile.achievements if isinstance(profile.achievements, list) else [profile.achievements]
+        user_profile_parts.append(f"Achievements: {', '.join(achievements)}")
+    
+    # Extract resume text if available
+    resume_text = ""
+    if profile.resume_path:
+        try:
+            resume_text = gemini_service.extract_text_from_file(profile.resume_path)
+        except Exception as e:
+            print(f"Warning: Could not extract resume text: {e}")
+            resume_text = ""
+    
+    # Combine all user information
+    combined_text = " ".join(user_profile_parts)
+    if resume_text and len(resume_text.strip()) > 10:
+        combined_text += f" Resume: {resume_text[:2000]}"  # Limit resume text to avoid too long input
+    
+    if not combined_text or len(combined_text.strip()) < 10:
+        raise HTTPException(
+            status_code=400, 
+            detail="Insufficient profile information. Please add skills, upload a resume, or complete your profile."
+        )
+    
+    # Match jobs from database
+    matched_jobs = ml_service.match_jobs_from_database(combined_text, jobs_from_db, top_k=20)
     
     if not matched_jobs:
-        raise HTTPException(status_code=503, detail="Job matching service is unavailable. ML models may not be loaded properly.")
+        # Fallback: return jobs sorted by creation date if ML matching fails
+        return {
+            "jobs": [],
+            "message": "Job matching service is temporarily unavailable. Please browse jobs manually.",
+            "fallback_available": True
+        }
     
-    return {"jobs": matched_jobs}
+    return {
+        "jobs": matched_jobs,
+        "total_matched": len(matched_jobs),
+        "message": f"Found {len(matched_jobs)} matching jobs"
+    }
 
 
 @app.post("/api/ai/generate-roadmap")

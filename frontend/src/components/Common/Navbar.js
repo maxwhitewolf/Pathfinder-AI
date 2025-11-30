@@ -29,8 +29,11 @@ const Navbar = () => {
                     <Link to="/recommendations" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
                       Recommendations
                     </Link>
+                    <Link to="/job-matching" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                      Job Matching
+                    </Link>
                     <Link to="/jobs" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
-                      Jobs
+                      Search Jobs
                     </Link>
                     <Link to="/roadmap" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
                       Roadmap

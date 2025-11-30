@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { jobAPI, aiAPI } from '../../services/api';
 import LoadingSpinner from '../../components/Common/LoadingSpinner';
 import { getErrorFromResponse } from '../../utils/errorHandler';
 
 const Jobs = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [allJobs, setAllJobs] = useState([]);
   const [matchedJobs, setMatchedJobs] = useState([]);
-  const [activeTab, setActiveTab] = useState('matched');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'search');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
@@ -17,10 +19,17 @@ const Jobs = () => {
 
   useEffect(() => {
     fetchAllJobs();
-    if (activeTab === 'matched') {
+    if (activeTab === 'search') {
       fetchMatchedJobs();
     }
   }, [activeTab]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    if (activeTab) {
+      setSearchParams({ tab: activeTab });
+    }
+  }, [activeTab, setSearchParams]);
 
   const fetchAllJobs = async () => {
     try {
@@ -175,7 +184,7 @@ const Jobs = () => {
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-6">
             <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-            <span className="text-cyan-200 text-sm font-medium">AI-Powered Job Matching</span>
+            <span className="text-cyan-200 text-sm font-medium">AI-Powered Job Search</span>
           </div>
           
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
@@ -185,7 +194,7 @@ const Jobs = () => {
             </span>
           </h1>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
-            Discover personalized job matches powered by AI that align with your skills, experience, and career aspirations
+            Search and discover personalized job opportunities powered by AI that align with your skills, experience, and career aspirations
           </p>
         </div>
       </div>
@@ -195,18 +204,18 @@ const Jobs = () => {
         <div className="bg-white/70 backdrop-blur-lg rounded-2xl p-2 shadow-xl border border-white/20 mb-8">
           <div className="flex space-x-2">
             <button
-              onClick={() => setActiveTab('matched')}
+              onClick={() => setActiveTab('search')}
               className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 ${
-                activeTab === 'matched'
+                activeTab === 'search'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center justify-center space-x-2">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span>AI Matched Jobs</span>
+                <span>Search Jobs</span>
               </div>
             </button>
             <button
@@ -227,7 +236,7 @@ const Jobs = () => {
           </div>
         </div>
 
-        {activeTab === 'all' && (
+        {activeTab === 'all' && !loading && (
           <div className="mb-8 bg-white/70 backdrop-blur-lg p-6 rounded-2xl shadow-xl border border-white/20">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -281,7 +290,7 @@ const Jobs = () => {
               <div className="ml-3 flex-1">
                 <p className="text-red-800 font-medium">{error}</p>
               </div>
-              {activeTab === 'matched' && (
+              {activeTab === 'search' && (
                 <button
                   onClick={fetchMatchedJobs}
                   className="ml-4 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-400 hover:to-pink-500 text-white px-4 py-2 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
@@ -293,7 +302,7 @@ const Jobs = () => {
           </div>
         )}
 
-        {loading && activeTab === 'matched' ? (
+        {loading && activeTab === 'search' ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="relative">
@@ -315,7 +324,7 @@ const Jobs = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {activeTab === 'matched' ? (
+            {activeTab === 'search' ? (
               matchedJobs.length > 0 ? (
                 <>
                   <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 backdrop-blur-sm rounded-2xl p-8 border border-blue-200/50 shadow-xl">
@@ -328,7 +337,7 @@ const Jobs = () => {
                         </div>
                       </div>
                       <div className="ml-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">AI-Matched Jobs</h3>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Search Results</h3>
                         <p className="text-gray-700 leading-relaxed">
                           These opportunities are specifically selected based on your resume, skills, and academic background using our advanced Doc2Vec matching algorithm.
                         </p>
@@ -348,7 +357,7 @@ const Jobs = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6M9 16v-2a2 2 0 012-2h2a2 2 0 012 2v2M9 16a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a2 2 0 012-2h2a2 2 0 012 2v2z" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">No matched jobs found</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">No jobs found</h3>
                   <p className="text-gray-600 max-w-md mx-auto mb-8">
                     Upload your resume and complete your profile to get personalized job matches tailored to your skills and experience.
                   </p>
