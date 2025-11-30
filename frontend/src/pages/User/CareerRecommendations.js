@@ -149,20 +149,20 @@ const CareerRecommendations = () => {
                             </svg>
                           </div>
                           {typeof career.similarity_score === 'number' && (
-                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${
+                          <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${
                               career.similarity_score >= 80 
-                                ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
+                              ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
                                 : career.similarity_score >= 60 
-                                ? 'bg-yellow-500/20 text-yellow-100 border border-yellow-400/30' 
-                                : 'bg-gray-500/20 text-gray-100 border border-gray-400/30'
-                            }`}>
+                              ? 'bg-yellow-500/20 text-yellow-100 border border-yellow-400/30' 
+                              : 'bg-gray-500/20 text-gray-100 border border-gray-400/30'
+                          }`}>
                               <span className={`w-2 h-2 ${career.similarity_score >= 80 ? 'bg-green-400' : career.similarity_score >= 60 ? 'bg-yellow-400' : 'bg-gray-400'} rounded-full mr-2 animate-pulse`}></span>
                               {career.similarity_score >= 80 
-                                ? '🏆 Excellent Match' 
+                              ? '🏆 Excellent Match' 
                                 : career.similarity_score >= 60 
-                                ? '⭐ Good Match' 
-                                : '💡 Potential Match'}
-                            </span>
+                              ? '⭐ Good Match' 
+                              : '💡 Potential Match'}
+                          </span>
                           )}
                         </div>
                         <h3 className="text-3xl font-bold text-white mb-3 group-hover:scale-105 transition-transform duration-300">

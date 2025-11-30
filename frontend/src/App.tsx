@@ -13,12 +13,15 @@ import Profile from './pages/User/Profile';
 import ResumeUpload from './pages/User/ResumeUpload';
 import CareerRecommendations from './pages/User/CareerRecommendations';
 import Jobs from './pages/User/Jobs';
+import JobBoard from './pages/User/JobBoard';
+import JobDetail from './pages/User/JobDetail';
 import Roadmap from './pages/User/Roadmap';
 import Analysis from './pages/User/Analysis';
 import Chat from './pages/User/Chat';
 
 import RecruiterDashboard from './pages/Recruiter/Dashboard';
 import CreateJob from './pages/Recruiter/CreateJob';
+import CreateJobEnhanced from './pages/Recruiter/CreateJobEnhanced';
 import ManageJobs from './pages/Recruiter/ManageJobs';
 
 const HomePage = () => {
@@ -98,7 +101,15 @@ function App() {
               path="/jobs" 
               element={
                 <ProtectedRoute userType="user">
-                  <Jobs />
+                  <JobBoard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/jobs/:id" 
+              element={
+                <ProtectedRoute userType="user">
+                  <JobDetail />
                 </ProtectedRoute>
               } 
             />
@@ -139,7 +150,7 @@ function App() {
               path="/recruiter/create-job" 
               element={
                 <ProtectedRoute userType="recruiter">
-                  <CreateJob />
+                  <CreateJobEnhanced />
                 </ProtectedRoute>
               } 
             />

@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 
 
 class UserCreate(BaseModel):
@@ -88,6 +88,7 @@ class UserProfileResponse(BaseModel):
         from_attributes = True
 
 
+# Legacy Job Schemas (for backward compatibility)
 class JobCreate(BaseModel):
     title: str
     description: str
@@ -121,6 +122,113 @@ class JobResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Enhanced Job Schemas
+class JobCreateEnhanced(BaseModel):
+    job_title: str = Field(..., min_length=1, max_length=200)
+    company_name: str = Field(..., min_length=1, max_length=200)
+    location_city: Optional[str] = None
+    location_country: Optional[str] = None
+    is_remote: bool = False
+    work_type: str = Field(default="onsite", pattern="^(onsite|remote|hybrid)$")
+    job_type: str = Field(default="full_time", pattern="^(full_time|part_time|internship|contract|freelance)$")
+    experience_level: str = Field(default="fresher", pattern="^(fresher|junior|mid|senior|lead)$")
+    min_experience_years: Optional[int] = Field(None, ge=0, le=50)
+    max_experience_years: Optional[int] = Field(None, ge=0, le=50)
+    min_salary: Optional[int] = Field(None, ge=0)
+    max_salary: Optional[int] = Field(None, ge=0)
+    salary_currency: str = Field(default="INR", max_length=10)
+    salary_pay_period: str = Field(default="year", pattern="^(year|month|hour|fixed)$")
+    is_salary_visible: bool = True
+    industry: Optional[str] = None
+    jd_text: str = Field(..., min_length=10)
+    skills_required: List[str] = Field(default_factory=list)
+    nice_to_have_skills: List[str] = Field(default_factory=list)
+    employment_level: Optional[str] = Field(None, pattern="^(entry_level|mid_level|senior_level)$")
+    application_url: Optional[str] = None
+    application_email: Optional[EmailStr] = None
+    application_deadline: Optional[date] = None
+
+
+class JobUpdateEnhanced(BaseModel):
+    job_title: Optional[str] = Field(None, min_length=1, max_length=200)
+    company_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    location_city: Optional[str] = None
+    location_country: Optional[str] = None
+    is_remote: Optional[bool] = None
+    work_type: Optional[str] = Field(None, pattern="^(onsite|remote|hybrid)$")
+    job_type: Optional[str] = Field(None, pattern="^(full_time|part_time|internship|contract|freelance)$")
+    experience_level: Optional[str] = Field(None, pattern="^(fresher|junior|mid|senior|lead)$")
+    min_experience_years: Optional[int] = Field(None, ge=0, le=50)
+    max_experience_years: Optional[int] = Field(None, ge=0, le=50)
+    min_salary: Optional[int] = Field(None, ge=0)
+    max_salary: Optional[int] = Field(None, ge=0)
+    salary_currency: Optional[str] = Field(None, max_length=10)
+    salary_pay_period: Optional[str] = Field(None, pattern="^(year|month|hour|fixed)$")
+    is_salary_visible: Optional[bool] = None
+    industry: Optional[str] = None
+    jd_text: Optional[str] = Field(None, min_length=10)
+    skills_required: Optional[List[str]] = None
+    nice_to_have_skills: Optional[List[str]] = None
+    employment_level: Optional[str] = Field(None, pattern="^(entry_level|mid_level|senior_level)$")
+    application_url: Optional[str] = None
+    application_email: Optional[EmailStr] = None
+    application_deadline: Optional[date] = None
+    status: Optional[str] = Field(None, pattern="^(active|closed|draft)$")
+
+
+class JobResponseEnhanced(BaseModel):
+    id: int
+    recruiter_id: int
+    job_title: str
+    company_name: str
+    location_city: Optional[str]
+    location_country: Optional[str]
+    is_remote: bool
+    work_type: str
+    job_type: str
+    experience_level: str
+    min_experience_years: Optional[int]
+    max_experience_years: Optional[int]
+    min_salary: Optional[int]
+    max_salary: Optional[int]
+    salary_currency: str
+    salary_pay_period: str
+    is_salary_visible: bool
+    industry: Optional[str]
+    jd_text: str
+    skills_required: List[str]
+    nice_to_have_skills: List[str]
+    employment_level: Optional[str]
+    application_url: Optional[str]
+    application_email: Optional[str]
+    application_deadline: Optional[date]
+    status: str
+    roadmap_json: Optional[dict] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class JobFilters(BaseModel):
+    keyword: Optional[str] = None
+    location_city: Optional[str] = None
+    location_country: Optional[str] = None
+    remote_only: Optional[bool] = None
+    experience_level: Optional[List[str]] = None
+    job_type: Optional[List[str]] = None
+    work_type: Optional[List[str]] = None
+    min_salary: Optional[int] = None
+    max_salary: Optional[int] = None
+    industry: Optional[List[str]] = None
+    skills_required: Optional[List[str]] = None
+    posted_within: Optional[str] = None  # "1", "7", "30", "any"
+    sort_by: Optional[str] = "newest"  # "newest", "salary_high", "relevance"
+    skip: int = 0
+    limit: int = 20
 
 
 class CareerPredictionRequest(BaseModel):

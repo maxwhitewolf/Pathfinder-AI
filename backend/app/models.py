@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, JSON, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, JSON, Text, DateTime, ForeignKey, Boolean, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -61,14 +61,53 @@ class Job(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     recruiter_id = Column(Integer, ForeignKey("recruiters.id"))
-    title = Column(String)
-    description = Column(Text)
-    skills_required = Column(JSON)
-    location = Column(String)
-    salary = Column(String)
-    industry = Column(String)
-    status = Column(String, default="open")
+    
+    # Basic Information
+    job_title = Column(String, nullable=False)
+    company_name = Column(String, nullable=False)
+    
+    # Location
+    location_city = Column(String, nullable=True)
+    location_country = Column(String, nullable=True)
+    is_remote = Column(Boolean, default=False)
+    work_type = Column(String, default="onsite")  # onsite, remote, hybrid
+    
+    # Job Type & Experience
+    job_type = Column(String, default="full_time")  # full_time, part_time, internship, contract, freelance
+    experience_level = Column(String, default="fresher")  # fresher, junior, mid, senior, lead
+    min_experience_years = Column(Integer, nullable=True)
+    max_experience_years = Column(Integer, nullable=True)
+    employment_level = Column(String, nullable=True)  # entry_level, mid_level, senior_level
+    
+    # Salary
+    min_salary = Column(Integer, nullable=True)
+    max_salary = Column(Integer, nullable=True)
+    salary_currency = Column(String, default="INR")
+    salary_pay_period = Column(String, default="year")  # year, month, hour, fixed
+    is_salary_visible = Column(Boolean, default=True)
+    
+    # Job Details
+    industry = Column(String, nullable=True)
+    jd_text = Column(Text, nullable=False)  # Job Description
+    skills_required = Column(JSON, default=list)  # Array of strings
+    nice_to_have_skills = Column(JSON, default=list)  # Array of strings
+    
+    # Application
+    application_url = Column(String, nullable=True)
+    application_email = Column(String, nullable=True)
+    application_deadline = Column(Date, nullable=True)
+    
+    # Status & Metadata
+    status = Column(String, default="active")  # active, closed, draft
+    roadmap_json = Column(JSON, nullable=True)  # For AI-generated roadmap
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Legacy fields for backward compatibility
+    title = Column(String, nullable=True)  # Maps to job_title
+    description = Column(Text, nullable=True)  # Maps to jd_text
+    location = Column(String, nullable=True)  # Legacy location field
+    salary = Column(String, nullable=True)  # Legacy salary field
     
     recruiter = relationship("Recruiter", back_populates="jobs")
 

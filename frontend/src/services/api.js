@@ -56,6 +56,19 @@ export const userAPI = {
 export const jobAPI = {
   getAllJobs: (skip = 0, limit = 50) => api.get(`/api/jobs?skip=${skip}&limit=${limit}`),
   createJob: (jobData) => api.post('/api/recruiter/jobs', jobData),
+  createJobEnhanced: (jobData) => api.post('/api/jobs/create', jobData), // New enhanced endpoint
+  searchJobs: (filters) => {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+        params.append(key, filters[key]);
+      }
+    });
+    return api.get(`/api/jobs/search?${params.toString()}`);
+  },
+  getJobById: (jobId) => api.get(`/api/jobs/${jobId}`),
+  generateJobRoadmap: (jobId) => api.post(`/api/jobs/${jobId}/generate-roadmap`), // For recruiters
+  generateJobRoadmapForUser: (jobId) => api.post(`/api/jobs/${jobId}/generate-roadmap-for-user`), // For users
   getRecruiterJobs: () => api.get('/api/recruiter/jobs'),
   updateJob: (jobId, jobData) => api.put(`/api/recruiter/jobs/${jobId}`, jobData),
   deleteJob: (jobId) => api.delete(`/api/recruiter/jobs/${jobId}`),
