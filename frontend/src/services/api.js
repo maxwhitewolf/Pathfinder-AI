@@ -77,10 +77,15 @@ export const jobAPI = {
 export const aiAPI = {
   recommendCareers: () => api.post('/api/ai/recommend-careers'),
   matchJobs: () => api.post('/api/ai/match-jobs'),
-  generateRoadmap: (request) => api.post('/api/ai/generate-roadmap', request),
   skillGapAnalysis: () => api.post('/api/ai/skill-gap-analysis'),
   strengthsWeaknesses: () => api.post('/api/ai/strengths-weaknesses'),
   chat: (message) => api.post('/api/ai/chat', { message }),
+};
+
+export const roadmapAPI = {
+  saveRoadmap: (roadmapData) => api.post('/api/roadmaps/save', roadmapData),
+  getSavedRoadmaps: () => api.get('/api/roadmaps'),
+  deleteRoadmap: (roadmapId) => api.delete(`/api/roadmaps/${roadmapId}`),
 };
 
 export default api;

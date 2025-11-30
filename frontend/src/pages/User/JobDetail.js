@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { jobAPI } from '../../services/api';
+import { jobAPI, roadmapAPI } from '../../services/api';
 import LoadingSpinner from '../../components/Common/LoadingSpinner';
 import { getErrorFromResponse } from '../../utils/errorHandler';
 
@@ -13,6 +13,8 @@ const JobDetail = () => {
   const [roadmap, setRoadmap] = useState(null);
   const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
   const [roadmapError, setRoadmapError] = useState('');
+  const [savingRoadmap, setSavingRoadmap] = useState(false);
+  const [roadmapSaved, setRoadmapSaved] = useState(false);
 
   useEffect(() => {
     fetchJobDetails();
@@ -89,6 +91,7 @@ const JobDetail = () => {
   const handleGenerateRoadmap = async () => {
     setGeneratingRoadmap(true);
     setRoadmapError('');
+    setRoadmapSaved(false);
     
     try {
       const response = await jobAPI.generateJobRoadmapForUser(id);
@@ -97,6 +100,28 @@ const JobDetail = () => {
       setRoadmapError(getErrorFromResponse(error, 'Failed to generate roadmap'));
     } finally {
       setGeneratingRoadmap(false);
+    }
+  };
+
+  const handleSaveRoadmap = async () => {
+    if (!roadmap) return;
+    
+    setSavingRoadmap(true);
+    try {
+      const title = roadmap.role_summary?.title || `${job.job_title} - Learning Roadmap`;
+      await roadmapAPI.saveRoadmap({
+        roadmap_data: roadmap,
+        title: title,
+        job_id: parseInt(id),
+        roadmap_type: 'job',
+        target_career: roadmap.role_summary?.title || job.job_title
+      });
+      setRoadmapSaved(true);
+      setTimeout(() => setRoadmapSaved(false), 3000);
+    } catch (error) {
+      alert(getErrorFromResponse(error, 'Failed to save roadmap'));
+    } finally {
+      setSavingRoadmap(false);
     }
   };
 
@@ -430,14 +455,49 @@ const JobDetail = () => {
                 </div>
                 Your Personalized Learning Roadmap
               </h2>
-              <button
-                onClick={() => setRoadmap(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveRoadmap}
+                  disabled={savingRoadmap || roadmapSaved}
+                  className={`px-4 py-2 rounded-xl font-semibold transition-all duration-300 ${
+                    roadmapSaved
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white'
+                  } disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+                >
+                  {savingRoadmap ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : roadmapSaved ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Saved!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Roadmap
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setRoadmap(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Role Summary */}

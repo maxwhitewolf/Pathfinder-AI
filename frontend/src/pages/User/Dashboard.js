@@ -302,9 +302,9 @@ const Dashboard = () => {
                 />
                 
                 <ActionCard
-                  title="Career Roadmap"
-                  description="Generate your learning path"
-                  link="/roadmap"
+                  title="Roadmaps"
+                  description="View and manage your saved learning roadmaps"
+                  link="/roadmaps"
                   gradient="from-purple-500 to-pink-500"
                   icon={
                     <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

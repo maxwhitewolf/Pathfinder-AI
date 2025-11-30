@@ -8,7 +8,7 @@ load_dotenv()
 
 # Get API key from environment variable or use fallback
 # IMPORTANT: Replace with your own API key from https://aistudio.google.com/apikey
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAVrvI4aKG74YTgQwmWMfQDH0MoNUP5x7s")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD9pjhW9bYzLeSMb8QGpWIPoyaPpFtrUIA")
 
 if GEMINI_API_KEY:
     try:
@@ -132,84 +132,6 @@ Return ONLY the JSON object."""
                 "soft_skills": [], 
                 "error": f"AI skill extraction failed: {error_msg}"
             }
-
-
-def generate_roadmaps(user_profile):
-    """Generate roadmaps using Gemini"""
-    if not client:
-        return {"roadmaps": [], "error": "Gemini API not configured. Please set GEMINI_API_KEY."}
-    
-    target_career = user_profile.get('target_career', 'Software Engineer')
-    current_skills = user_profile.get('current_skills', [])
-    missing_skills = user_profile.get('missing_skills', [])
-    
-    roadmaps = []
-    variants = [
-        {"name": "Fast-Track Intensive", "duration": 6, "desc": "Aggressive bootcamp-style"},
-        {"name": "Balanced Structured", "duration": 12, "desc": "Moderate pace with structure"},
-        {"name": "Self-Paced Flexible", "duration": 18, "desc": "Flexible learning schedule"},
-        {"name": "Project-Based Practical", "duration": 10, "desc": "Learning by doing"}
-    ]
-    
-    api_error = None
-    for i, variant in enumerate(variants):
-        prompt = f"""Generate a {variant['name']} learning roadmap for becoming a {target_career}.
-
-Current Skills: {', '.join(current_skills) if current_skills else 'None'}
-Skills to Learn: {', '.join(missing_skills) if missing_skills else 'Various'}
-
-Create a roadmap with 5-6 steps. Each step should have:
-- title, description, duration_weeks, resources (2-3), skills_gained
-
-Return as JSON:
-{{
-  "roadmap_id": {i+1},
-  "roadmap_name": "{variant['name']}",
-  "description": "{variant['desc']}",
-  "duration_months": {variant['duration']},
-  "difficulty": "intermediate",
-  "steps": [
-    {{"step_number": 1, "title": "...", "description": "...", "duration_weeks": 4, "resources": ["...", "..."], "skills_gained": ["...", "..."]}},
-    ...
-  ]
-}}
-
-Return ONLY valid JSON."""
-
-        try:
-            response = client.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(temperature=0.7)
-            )
-            
-            if not response or not response.text:
-                continue
-                
-            response_text = response.text.strip()
-            response_text = response_text.replace("```json", "").replace("```", "").strip()
-            roadmap = json.loads(response_text)
-            roadmaps.append(roadmap)
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error in roadmap {i+1}: {e}")
-            continue
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Error generating roadmap {i+1}: {error_msg}")
-            # Check for API key errors
-            if "API key" in error_msg or "PermissionDenied" in error_msg or "403" in error_msg:
-                api_error = "Gemini API key is invalid or expired. Please update the API key."
-                break
-            elif "404" in error_msg or "NotFound" in error_msg:
-                api_error = "Gemini model not found. Please check the model name."
-                break
-            continue
-    
-    if api_error:
-        return {"roadmaps": [], "error": api_error}
-    if not roadmaps:
-        return {"roadmaps": [], "error": "Failed to generate any roadmaps. Please check your API key and try again."}
-    
-    return {"roadmaps": roadmaps, "error": None}
 
 
 def analyze_skill_gap(user_skills, required_skills):

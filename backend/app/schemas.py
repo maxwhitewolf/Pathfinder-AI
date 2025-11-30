@@ -253,3 +253,25 @@ class FeedbackRequest(BaseModel):
     roadmap_variant: int
     rating: int
     user_context: dict
+
+
+class RoadmapSaveRequest(BaseModel):
+    roadmap_data: dict
+    title: str
+    job_id: Optional[int] = None
+    roadmap_type: str = "job"  # "career" or "job"
+    target_career: Optional[str] = None
+
+
+class RoadmapResponse(BaseModel):
+    id: int
+    user_id: int
+    title: Optional[str]
+    target_career: Optional[str]
+    roadmap_data: dict
+    job_id: Optional[int]
+    roadmap_type: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

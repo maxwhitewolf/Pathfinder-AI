@@ -16,7 +16,8 @@ import Jobs from './pages/User/Jobs';
 import JobBoard from './pages/User/JobBoard';
 import JobMatching from './pages/User/JobMatching';
 import JobDetail from './pages/User/JobDetail';
-import Roadmap from './pages/User/Roadmap';
+import Roadmaps from './pages/User/Roadmaps';
+import RoadmapDetail from './pages/User/RoadmapDetail';
 import Analysis from './pages/User/Analysis';
 import Chat from './pages/User/Chat';
 
@@ -123,10 +124,18 @@ function App() {
               } 
             />
             <Route 
-              path="/roadmap" 
+              path="/roadmaps" 
               element={
                 <ProtectedRoute userType="user">
-                  <Roadmap />
+                  <Roadmaps />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/roadmaps/:id" 
+              element={
+                <ProtectedRoute userType="user">
+                  <RoadmapDetail />
                 </ProtectedRoute>
               } 
             />

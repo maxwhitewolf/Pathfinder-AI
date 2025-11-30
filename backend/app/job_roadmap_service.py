@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get API key from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAVrvI4aKG74YTgQwmWMfQDH0MoNUP5x7s")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD9pjhW9bYzLeSMb8QGpWIPoyaPpFtrUIA")
 
 # Initialize Gemini client (reusing same pattern as gemini_service)
 if GEMINI_API_KEY:

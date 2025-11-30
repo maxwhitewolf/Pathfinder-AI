@@ -117,10 +117,14 @@ class Roadmap(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    target_career = Column(String)
+    target_career = Column(String, nullable=True)  # For career-based roadmaps
     roadmap_data = Column(JSON)
-    selected_variant = Column(Integer)
-    feedback_rating = Column(Integer)
+    selected_variant = Column(Integer, nullable=True)
+    feedback_rating = Column(Integer, nullable=True)
+    # New fields for job-based roadmaps
+    job_id = Column(Integer, ForeignKey("jobs.id"), nullable=True)  # For job-based roadmaps
+    roadmap_type = Column(String, default="career")  # "career" or "job"
+    title = Column(String, nullable=True)  # Display title for the roadmap
     created_at = Column(DateTime, default=datetime.utcnow)
     
     user = relationship("User", back_populates="roadmaps")

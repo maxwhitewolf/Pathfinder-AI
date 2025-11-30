@@ -659,41 +659,68 @@ def match_jobs(current_user: models.User = Depends(auth.get_current_user), db: S
 
 @app.post("/api/ai/generate-roadmap")
 def generate_roadmap(request: schemas.RoadmapRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
-    profile = db.query(models.UserProfile).filter(models.UserProfile.user_id == current_user.id).first()
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
+    """DEPRECATED: This endpoint is deprecated. Use job-based roadmap generation instead."""
+    raise HTTPException(
+        status_code=410, 
+        detail="This endpoint is deprecated. Please generate roadmaps from job listings using /api/jobs/{job_id}/generate-roadmap-for-user"
+    )
+
+
+@app.post("/api/roadmaps/save", response_model=schemas.RoadmapResponse)
+def save_roadmap(request: schemas.RoadmapSaveRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    """Save a roadmap. Users can have maximum 3 saved roadmaps. If limit reached, oldest is deleted."""
+    # Get current roadmaps count
+    existing_roadmaps = db.query(models.Roadmap).filter(
+        models.Roadmap.user_id == current_user.id
+    ).order_by(models.Roadmap.created_at.asc()).all()
     
-    user_profile = {
-        'target_career': request.target_career,
-        'current_skills': (profile.skills or []) + (profile.extracted_skills or []),
-        'missing_skills': request.missing_skills or [],
-        'experience_level': request.experience_level or 'beginner',
-        'time_commitment': request.time_commitment or 'part-time'
-    }
-    
-    roadmap_result = gemini_service.generate_roadmaps(user_profile)
-    
-    # Check for errors
-    if roadmap_result.get("error"):
-        raise HTTPException(status_code=503, detail=roadmap_result["error"])
-    
-    roadmaps = roadmap_result.get("roadmaps", [])
-    if not roadmaps:
-        raise HTTPException(status_code=503, detail="Failed to generate roadmaps. Please try again later.")
-    
-    selected_roadmap = ml_service.select_best_roadmap(roadmaps, user_profile)
-    
-    if selected_roadmap:
-        db_roadmap = models.Roadmap(
-            user_id=current_user.id,
-            target_career=request.target_career,
-            roadmap_data=selected_roadmap,
-            selected_variant=selected_roadmap.get('roadmap_id', 1)
-        )
-        db.add(db_roadmap)
+    # If user has 3 or more roadmaps, delete the oldest one
+    if len(existing_roadmaps) >= 3:
+        oldest_roadmap = existing_roadmaps[0]
+        db.delete(oldest_roadmap)
         db.commit()
     
-    return {"selected_roadmap": selected_roadmap, "all_roadmaps": roadmaps}
+    # Create new roadmap
+    db_roadmap = models.Roadmap(
+        user_id=current_user.id,
+        title=request.title,
+        roadmap_data=request.roadmap_data,
+        job_id=request.job_id,
+        roadmap_type=request.roadmap_type,
+        target_career=request.target_career
+    )
+    db.add(db_roadmap)
+    db.commit()
+    db.refresh(db_roadmap)
+    
+    return db_roadmap
+
+
+@app.get("/api/roadmaps", response_model=List[schemas.RoadmapResponse])
+def get_saved_roadmaps(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    """Get all saved roadmaps for the current user (max 3)."""
+    roadmaps = db.query(models.Roadmap).filter(
+        models.Roadmap.user_id == current_user.id
+    ).order_by(models.Roadmap.created_at.desc()).limit(3).all()
+    
+    return roadmaps
+
+
+@app.delete("/api/roadmaps/{roadmap_id}")
+def delete_roadmap(roadmap_id: int, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    """Delete a saved roadmap."""
+    roadmap = db.query(models.Roadmap).filter(
+        models.Roadmap.id == roadmap_id,
+        models.Roadmap.user_id == current_user.id
+    ).first()
+    
+    if not roadmap:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    
+    db.delete(roadmap)
+    db.commit()
+    
+    return {"message": "Roadmap deleted successfully"}
 
 
 @app.post("/api/ai/skill-gap-analysis")
